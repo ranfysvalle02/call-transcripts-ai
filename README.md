@@ -6,6 +6,10 @@ The result isn't certainty. It's **auditability**: every number drills down to a
 
 > **The punchline:** black boxes can't be opened — but strategic facts and quotes buy you auditability, and a possible explanation.
 
+![Two pipelines. Top: transcript, LLM summarize, five bullets, no link back to the words. Bottom: transcript, LLM extracts typed facts with quotes, verbatim quote check, deterministic counts, report that links back to the transcript.](assets/fig1_blackbox_vs_auditable.png)
+
+*Top: a free-form summary becomes the record and nothing links back to the words. Bottom: the model only extracts; the quote check and the counting are mechanical, so every number traces back to a call, an utterance, and a quote.*
+
 It runs entirely on **synthetic, fictional** sales calls (for an invented analytics product called "Lumen"), and works against OpenAI **or a fully local model via [Ollama](https://ollama.com)** — no API key, nothing leaving your machine. All it needs from the model is a JSON response. No database, no customer data, nothing real.
 
 > This is a teaching demo, not a product. The data is made up and the heuristics are intentionally simple so they stay auditable themselves.
@@ -15,6 +19,10 @@ It runs entirely on **synthetic, fictional** sales calls (for an invented analyt
 A summary is the model's **stated account** of the call — self-reported, and sometimes unfaithful to what was actually said. A verbatim **quote** is an objective artifact: it either appears in the transcript or it doesn't.
 
 So this project treats each extracted fact as a **decision record, not a confession**: it pairs the model's interpretation (a typed label) with the objective evidence (a quote) and its provenance (`call_id`, `utterance_id`). The label can be wrong; the quote is checkable; the pairing is auditable.
+
+![Anatomy of one stored fact: the label (interest, self-serve reporting) is the model's interpretation and is wrong here; the quote is the objective artifact and passed the substring check; call syn-0001, utterance 11 is the provenance; model and prompt version record which rules produced it.](assets/fig4_decision_record.png)
+
+*A real fact from a local `llama3` run. The label is wrong (this is a contract-terms objection, not an interest), but the quote and its location are right, so a reviewer can catch and fix it in seconds.*
 
 > This is the same philosophy as the companion project [blackbox-ai](https://github.com/ranfysvalle02/blackbox-ai) ("a flight recorder for coding agents"), applied to a different domain. There, you anchor on objective artifacts like tool calls and diffs rather than the agent's stated chain-of-thought. Here, you anchor on the quote rather than the summary.
 
@@ -107,24 +115,24 @@ python -m callintel run --jsonl data/sample_calls.jsonl --cohort my-export --sho
 
 ## What makes it auditable
 
-You can't make a black box transparent. You *can* make its output small, local, and checkable. Each risk of "just summarize it" is met with a concrete mitigation in the code:
+You can't make a black box transparent. You *can* make its output small, local, and checkable. This is the code map for the six mitigations in [blog.md](blog.md) (section 4):
 
-| Risk | Mitigation (where it lives) |
-| --- | --- |
-| **Lossy summaries** drop details | Extract small facts instead of prose, and measure what a summary loses with `compare` (`callintel/compare.py`). |
-| **Hallucinated quotes** | Every fact's `quote` must be a verbatim substring of the shown utterances, or it is flagged ungrounded. The quote is the objective anchor (`validate_grounding` in `callintel/core.py`). |
-| **Inconsistent labels** between runs | Closed vocabularies with deterministic coercion onto known buckets (`DEFAULT_TAXONOMY`, `coerce_enum`). |
-| **Counts that drift** run to run | One LLM call per transcript; all aggregation is plain Python (`aggregate_facts`). Re-running gives identical numbers. |
-| **Silent model / prompt drift** | `prompt_version` + model are part of the cache key and are stamped on every fact; change the prompt and old facts are transparently superseded. |
-| **Narrative spin** | The optional `--narrative` may only restate already-computed numbers and must cite evidence; it cannot introduce new facts (`render_narrative`). |
-| **Unverified output** | A human-in-the-loop `audit` sheet makes spot-checking a first-class step. |
+| Mitigation | Risk it addresses | Where it lives |
+| --- | --- | --- |
+| **1. Extract, don't summarize** | Lossy prose that can't be checked | `build_extraction_prompt`, `extraction_schema`, `extract_facts_for_call` in `callintel/core.py`; structured-output fallbacks in `LLMClient` (`callintel/llm.py`). |
+| **2. Verbatim quote check** (the objective anchor) | Hallucinated quotes | `validate_grounding` in `callintel/core.py`: a quote must be a whitespace/case-insensitive substring of the shown utterances, or the fact is flagged ungrounded. `aggregate_facts` counts grounded facts only. |
+| **3. Closed vocabularies** | Inconsistent labels between runs | `DEFAULT_TAXONOMY`, `coerce_enum`, `load_taxonomy` (`--taxonomy path.json`) in `callintel/core.py`. |
+| **4. Determinism upstream + versioning** | Counts that drift; silent model / prompt drift | One LLM call per transcript, then plain Python: `aggregate_facts`, `render_report`. `FactStore` caches on `(source, call_id, prompt_version, model)` and stamps `PROMPT_VERSION` + model on every fact, so a prompt or model change supersedes old facts. |
+| **5. Narrative last, on a leash** | Narrative spin | `render_narrative` (`--narrative`): restates the already-computed aggregates and may only cite the evidence list. |
+| **6. Human audit + measure the loss** | Unverified output; invisible loss | `cmd_audit` (`audit` pass/fail sheet) in `callintel/core.py`; `compare_call`, `quote_covered`, `find_invented_numbers`, `find_invented_names` in `callintel/compare.py`. `cmd_selftest` / `selftest_checks` exercise all of it offline. |
 
 Together these turn "the AI said so" into "here is the quote, the call, and the line — go check it." That is the difference between a black box and an auditable one: not certainty, but a trail to a *possible explanation*.
 
 ## Honest limitations
 
 - **Grounding proves a quote exists, not that its label is correct.** The quote is the objective artifact; the label is still the model's *stated* interpretation and can be wrong. That is exactly why `audit` exists — auditability means a human can actually do the audit.
-- **The `compare` loss and invention checks are lexical heuristics**, not an NLP judge. Coverage is a content-word overlap test; invention detection is a digit-sequence / proper-noun presence test. They are deliberately simple so they are auditable, and they err toward under-claiming. See the docstrings in `callintel/compare.py`.
+- **A quote is grounded one utterance at a time.** "Yeah, completely." is perfectly grounded and meaningless without the rep's question before it. Storing the preceding turn (or a small context window) with each quote is the natural next step.
+- **The `compare` loss and invention checks are lexical heuristics**, not an NLP judge. Coverage is a content-word overlap test; invention detection is a digit-sequence / proper-noun presence test. They are deliberately simple so they are auditable, and they can misfire (a capitalized sentence opener can look like an invented name). See the docstrings in `callintel/compare.py`.
 - **The data is synthetic.** The calls, companies, competitors, and numbers are all invented to exercise the pipeline and to plant summarization traps.
 
 ## Layout
@@ -132,7 +140,7 @@ Together these turn "the AI said so" into "here is the quote, the call, and the 
 ```
 callintel/
   core.py        # source-agnostic pipeline: taxonomy, grounding, fact store, aggregation, report
-  llm.py         # OpenAI Responses-API client (temp 0, strict JSON schema, graceful degrade)
+  llm.py         # OpenAI-compatible Chat Completions client (temp 0, strict JSON schema, graceful degrade)
   compare.py     # naive summary vs grounded extraction: loss / inventions / traceability
   cli.py         # `python -m callintel ...`
   adapters/
@@ -140,6 +148,9 @@ callintel/
     synthetic.py # baked-in fictional sample calls
     jsonl.py     # bring-your-own JSONL export
 data/sample_calls.jsonl
+assets/
+  make_figures.py         # regenerates the figures (matplotlib) from recorded compare runs
+  compare_all_llama3.md   # raw `compare` output across all 7 calls behind fig5
 ```
 
 ## Related
