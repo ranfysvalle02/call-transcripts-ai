@@ -321,11 +321,7 @@ def extract_facts_for_call(
     if not call.utterances:
         return []
     prompt = build_extraction_prompt(call, taxonomy)
-    schema = extraction_schema(taxonomy)
-    try:
-        out = client.complete(prompt, schema=schema)
-    except RuntimeError:
-        out = client.complete(prompt, schema=None)  # fallback: prompt-enforced JSON
+    out = client.complete(prompt, schema=extraction_schema(taxonomy))
 
     raw_facts = _parse_facts_json(out["text"])
     call_date = _fmt_date(call.call_date)

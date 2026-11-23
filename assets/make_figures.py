@@ -308,11 +308,12 @@ def fig_all_calls():
     y = range(len(rows))
     ax.barh(y, covered, color=BLUE, height=0.6, label="covered by the summary")
     ax.barh(y, lost, left=covered, color=RED, height=0.6, label="lost (grounded, not in summary)")
-    for yy, c, l in zip(y, covered, lost):
+    for yy, c, n_lost in zip(y, covered, lost):
         if c:
             ax.text(c / 2, yy, str(c), ha="center", va="center", color="white", weight="bold")
-        if l:
-            ax.text(c + l / 2, yy, str(l), ha="center", va="center", color="white", weight="bold")
+        if n_lost:
+            ax.text(c + n_lost / 2, yy, str(n_lost), ha="center", va="center", color="white",
+                    weight="bold")
     ax.set_yticks(list(y), names, fontsize=11.5, color=INK)
     ax.tick_params(axis="y", length=0)
     ax.set_xlabel("grounded, quote-backed facts per call")

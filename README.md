@@ -1,5 +1,8 @@
 # call-transcripts-ai
 
+[![selftest](https://github.com/ranfysvalle02/call-transcripts-ai/actions/workflows/selftest.yml/badge.svg)](https://github.com/ranfysvalle02/call-transcripts-ai/actions/workflows/selftest.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Auditable call-transcript summarization.** An LLM summary is a black box: convenient, confident, and impossible to check after the fact. You can't open the box and you can't make it deterministic — but you *can* box it in. Instead of asking a model to **summarize** (prose you have to trust), ask it to **extract** small, schema-bound facts that each carry a **verbatim quote**, verify those quotes mechanically, and do the counting in plain Python.
 
 The result isn't certainty. It's **auditability**: every number drills down to a specific `{call_id, utterance_id, quote}`, so a human can follow the trail back to the words that were actually said and reconstruct a *possible explanation* for any claim.
@@ -42,6 +45,8 @@ flowchart LR
 The LLM runs once per call, as an extractor. Everything downstream — grounding, caching, counting, ranking — is deterministic Python. Re-running yields identical numbers.
 
 ## Quickstart
+
+Requires Python 3.10+. The only dependencies are `openai` and `python-dotenv`.
 
 ```bash
 pip install -r requirements.txt
@@ -149,7 +154,7 @@ callintel/
     jsonl.py     # bring-your-own JSONL export
 data/sample_calls.jsonl
 assets/
-  make_figures.py         # regenerates the figures (matplotlib) from recorded compare runs
+  make_figures.py         # regenerates the figures from recorded compare runs (needs matplotlib)
   compare_all_llama3.md   # raw `compare` output across all 7 calls behind fig5
 ```
 

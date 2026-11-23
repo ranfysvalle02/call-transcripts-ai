@@ -44,10 +44,10 @@ _STOPWORDS = {
     "those", "he", "she", "his", "her", "do", "does", "did", "have", "has", "had",
     "not", "no", "yes", "can", "could", "would", "should", "will", "want", "need",
     "really", "just", "very", "too", "much", "more", "most", "some", "any", "all",
-    "one", "two", "would", "like", "get", "got", "go", "going", "right", "now",
+    "one", "two", "like", "get", "got", "go", "going", "right", "now",
     "thing", "things", "team", "lot", "day", "week", "time", "today", "honestly",
     "maybe", "there", "here", "what", "which", "who", "how", "when", "where", "as",
-    "than", "out", "down", "off", "own", "every", "only", "also", "them", "me",
+    "than", "out", "down", "off", "own", "every", "only", "also", "me",
     "customer", "rep", "call", "said", "say", "says", "well", "okay", "sure",
 }
 

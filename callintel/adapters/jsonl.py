@@ -14,10 +14,13 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 from ..core import Call, Utterance
+
+LOG = logging.getLogger("call_intel")
 
 _CALL_ID_KEYS = ("call_id", "id", "_id", "callId")
 _COMPANY_KEYS = ("company_name", "company", "account_name", "account", "customer")
@@ -39,15 +42,14 @@ def _parse_dt(value: Any) -> dt.datetime | None:
         return None
     if isinstance(value, (int, float)):  # epoch seconds
         try:
-            return dt.datetime.utcfromtimestamp(float(value))
+            return dt.datetime.fromtimestamp(float(value), dt.timezone.utc)
         except (OverflowError, OSError, ValueError):
             return None
     s = str(value).replace("Z", "+00:00")
-    for parse in (dt.datetime.fromisoformat,):
-        try:
-            return parse(s)
-        except ValueError:
-            pass
+    try:
+        return dt.datetime.fromisoformat(s)
+    except ValueError:
+        pass
     try:
         return dt.datetime.fromisoformat(s[:19])
     except ValueError:
@@ -101,7 +103,8 @@ class JsonlCallSource:
                     continue
                 try:
                     rec = json.loads(line)
-                except json.JSONDecodeError:
+                except json.JSONDecodeError as exc:
+                    LOG.warning("Skipping malformed JSON on line %d of %s: %s", i + 1, self.path, exc)
                     continue
                 if isinstance(rec, dict):
                     calls.append(_to_call(rec, i))
