@@ -23,7 +23,7 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import Sequence
+from collections.abc import Sequence
 
 from dotenv import find_dotenv, load_dotenv
 

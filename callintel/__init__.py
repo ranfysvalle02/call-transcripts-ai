@@ -27,13 +27,13 @@ from .core import (
 from .llm import DEFAULT_MODEL, LLMClient
 
 __all__ = [
+    "DEFAULT_MODEL",
     "Aggregation",
     "Call",
     "Fact",
     "FactStore",
-    "Utterance",
     "LLMClient",
-    "DEFAULT_MODEL",
+    "Utterance",
     "aggregate_and_render",
     "aggregate_facts",
     "apply_model_default",

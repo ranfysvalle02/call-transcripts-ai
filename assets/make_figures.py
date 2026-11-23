@@ -226,11 +226,11 @@ def fig_scorecard():
     labels = ["Summary bullets\nthat cite a source", "Grounded facts linked\nto an exact quote"]
     have = [d["bullets_cited"], d["facts_quoted"]]
     total = [d["bullets"], d["grounded"]]
-    pct = [h / t * 100 for h, t in zip(have, total)]
+    pct = [h / t * 100 for h, t in zip(have, total, strict=True)]
     ypos = [1, 0]
     ax2.barh(ypos, [100, 100], color="#eaeef2", height=0.5)
     ax2.barh(ypos, pct, color=[RED, GREEN], height=0.5)
-    for yy, h, t, p, c in zip(ypos, have, total, pct, [RED, GREEN]):
+    for yy, h, t, p, c in zip(ypos, have, total, pct, [RED, GREEN], strict=True):
         ax2.text(max(p, 0) + 2 if p < 80 else p - 2, yy, f"{h} of {t}",
                  ha="left" if p < 80 else "right", va="center", fontsize=14, weight="bold",
                  color=c if p < 80 else "white")
@@ -251,12 +251,14 @@ def fig_decision_record():
     fig, ax = _canvas(13, 5.4, (0, 26), (0, 10.8))
     rows = [
         ("label", "fact_type: interest\ntheme:     self_serve_reporting",
-         "MODEL'S INTERPRETATION", "Can be wrong (it is, here). A human\nfixes it to a contract-terms objection.",
+         "MODEL'S INTERPRETATION",
+         "Can be wrong (it is, here). A human\nfixes it to a contract-terms objection.",
          AMBER_BG, AMBER),
         ("quote", "\u201cOne more thing, our current contract auto\n"
                   "renews in March and we cannot sign anything\n"
                   "that locks us in for more than a year.\u201d",
-         "OBJECTIVE ARTIFACT", "Verbatim substring of the transcript:\nchecked mechanically, grounded = true.",
+         "OBJECTIVE ARTIFACT",
+         "Verbatim substring of the transcript:\nchecked mechanically, grounded = true.",
          BLUE_BG, BLUE),
         ("provenance", "call_id: syn-0001    utterance_id: 11",
          "WHERE TO LOOK", "Jump straight to the sentence\nand decide in seconds.",
@@ -308,7 +310,7 @@ def fig_all_calls():
     y = range(len(rows))
     ax.barh(y, covered, color=BLUE, height=0.6, label="covered by the summary")
     ax.barh(y, lost, left=covered, color=RED, height=0.6, label="lost (grounded, not in summary)")
-    for yy, c, n_lost in zip(y, covered, lost):
+    for yy, c, n_lost in zip(y, covered, lost, strict=True):
         if c:
             ax.text(c / 2, yy, str(c), ha="center", va="center", color="white", weight="bold")
         if n_lost:
