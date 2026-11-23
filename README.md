@@ -3,6 +3,8 @@
 [![selftest](https://github.com/ranfysvalle02/call-transcripts-ai/actions/workflows/selftest.yml/badge.svg)](https://github.com/ranfysvalle02/call-transcripts-ai/actions/workflows/selftest.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
+![](Gemini_Generated_Image_afl6x5afl6x5afl6.jpeg)
+
 **Auditable call-transcript summarization.** An LLM summary is a black box: convenient, confident, and impossible to check after the fact. You can't open the box and you can't make it deterministic — but you *can* box it in. Instead of asking a model to **summarize** (prose you have to trust), ask it to **extract** small, schema-bound facts that each carry a **verbatim quote**, verify those quotes mechanically, and do the counting in plain Python.
 
 The result isn't certainty. It's **auditability**: every number drills down to a specific `{call_id, utterance_id, quote}`, so a human can follow the trail back to the words that were actually said and reconstruct a *possible explanation* for any claim.
